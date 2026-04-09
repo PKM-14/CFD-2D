@@ -7,40 +7,42 @@ canvas.height = window.innerHeight;
 // SETTINGS
 let PARTICLES_PER_LINE = 50;
 let NUM_LINES = 10;
-let baseVelocity = 2;       // horizontal speed
+let baseVelocity = 2;
 let showVortex = true;
-const vortexStrength = 0.2; // small offset per frame
-const vortexRadius = 100;   // radius of vortex influence
+const vortexStrength = 0.2;  // small offset per frame
+const vortexRadius = 100;    // radius of each vortex
 
 // ----------------------------
 // PARTICLE CLASS
 class Particle {
-    constructor(x, y) {
+    constructor(x, y, color) {
         this.x = x;
         this.y = y;
         this.prevX = x;
         this.prevY = y;
+        this.color = color;
     }
 
-    update(vortexX, vortexY) {
+    update(vortices) {
         this.prevX = this.x;
         this.prevY = this.y;
 
         // Base rightward movement
         this.x += baseVelocity;
 
-        // Gentle vortex effect
+        // Apply all vortices
         if (showVortex) {
-            const dx = this.x - vortexX;
-            const dy = this.y - vortexY;
-            const dist2 = dx*dx + dy*dy;
-            if (dist2 < vortexRadius*vortexRadius) {
-                const dist = Math.sqrt(dist2);
-                const factor = (vortexRadius - dist)/vortexRadius * vortexStrength;
-                // Small rotational influence
-                this.x += -dy * factor;
-                this.y += dx * factor;
-            }
+            vortices.forEach(v => {
+                const dx = this.x - v.x;
+                const dy = this.y - v.y;
+                const dist2 = dx*dx + dy*dy;
+                if (dist2 < vortexRadius*vortexRadius) {
+                    const dist = Math.sqrt(dist2);
+                    const factor = (vortexRadius - dist)/vortexRadius * vortexStrength;
+                    this.x += -dy * factor;
+                    this.y += dx * factor;
+                }
+            });
         }
 
         // Wrap horizontally
@@ -57,7 +59,7 @@ class Particle {
 
     draw() {
         ctx.beginPath();
-        ctx.strokeStyle = "white";
+        ctx.strokeStyle = this.color;
         ctx.moveTo(this.prevX, this.prevY);
         ctx.lineTo(this.x, this.y);
         ctx.stroke();
@@ -72,10 +74,13 @@ function resetParticles() {
     particles = [];
     const spacingY = canvas.height / (NUM_LINES + 1);
     const spacingX = canvas.width / PARTICLES_PER_LINE;
+
     for (let line = 0; line < NUM_LINES; line++) {
         const y = spacingY * (line + 1);
+        const hue = 200 - line * (150 / NUM_LINES); // gradient from blue to red
+        const color = `hsl(${hue}, 100%, 70%)`;
         for (let p = 0; p < PARTICLES_PER_LINE; p++) {
-            particles.push(new Particle(p * spacingX, y));
+            particles.push(new Particle(p * spacingX, y, color));
         }
     }
 }
@@ -83,26 +88,33 @@ function resetParticles() {
 resetParticles();
 
 // ----------------------------
-// MOUSE POSITION
-let mouseX = canvas.width / 2;
-let mouseY = canvas.height / 2;
+// VORTICES
+let vortices = [];
+// initial central vortex
+vortices.push({x: canvas.width/2, y: canvas.height/2});
 
-canvas.addEventListener("mousemove", e => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
+// Add vortex on click
+canvas.addEventListener("click", e => {
+    vortices.push({x: e.clientX, y: e.clientY});
 });
 
 // ----------------------------
 // ANIMATION LOOP
 function animate() {
-    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    // Glow trail background
+    ctx.fillStyle = "rgba(0,0,0,0.15)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Enable glow effect
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = "white";
+
     particles.forEach(p => {
-        p.update(mouseX, mouseY);
+        p.update(vortices);
         p.draw();
     });
 
+    ctx.shadowBlur = 0; // reset shadow for next frame
     requestAnimationFrame(animate);
 }
 
@@ -117,6 +129,7 @@ window.addEventListener("keydown", e => {
         case "ArrowDown": PARTICLES_PER_LINE = Math.max(10, PARTICLES_PER_LINE - 10); resetParticles(); break;
         case "l": NUM_LINES = Math.min(20, NUM_LINES + 1); resetParticles(); break;
         case "k": NUM_LINES = Math.max(1, NUM_LINES - 1); resetParticles(); break;
+        case "c": vortices = []; break; // clear vortices
     }
 });
 
