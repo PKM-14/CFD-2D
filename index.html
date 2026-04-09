@@ -2,14 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>2D CFD Particle Lines</title>
+  <title>Stable CFD Particle Lines</title>
   <style>
-    body { margin:0; overflow:hidden; background:black; }
+    body { margin:0; overflow:hidden; background:black; font-family:sans-serif; }
     canvas { display:block; }
+    #controls {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0,0,0,0.5);
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    #controls b { display:inline-block; width:120px; }
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
+  <div id="controls">
+    <div><b>Toggle Vortex:</b> V</div>
+    <div><b>Particles per Line:</b> Arrow Up / Arrow Down</div>
+    <div><b>Number of Lines:</b> L / K</div>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>
