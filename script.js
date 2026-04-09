@@ -7,10 +7,10 @@ canvas.height = window.innerHeight;
 // SETTINGS
 let PARTICLES_PER_LINE = 50;
 let NUM_LINES = 10;
+let baseVelocity = 2;       // horizontal speed
 let showVortex = true;
-let baseVelocity = 2;         // horizontal speed
-const vortexStrength = 50;    // strength of vortex effect
-const vortexRadius = 150;     // radius in pixels
+const vortexStrength = 0.2; // small offset per frame
+const vortexRadius = 100;   // radius of vortex influence
 
 // ----------------------------
 // PARTICLE CLASS
@@ -29,16 +29,17 @@ class Particle {
         // Base rightward movement
         this.x += baseVelocity;
 
-        // Add vortex effect if enabled
-        if(showVortex) {
+        // Gentle vortex effect
+        if (showVortex) {
             const dx = this.x - vortexX;
             const dy = this.y - vortexY;
             const dist2 = dx*dx + dy*dy;
-            if(dist2 < vortexRadius*vortexRadius) {
+            if (dist2 < vortexRadius*vortexRadius) {
                 const dist = Math.sqrt(dist2);
-                const strength = (vortexRadius - dist)/vortexRadius * vortexStrength / 100;
-                this.x += -dy * strength;
-                this.y += dx * strength;
+                const factor = (vortexRadius - dist)/vortexRadius * vortexStrength;
+                // Small rotational influence
+                this.x += -dy * factor;
+                this.y += dx * factor;
             }
         }
 
@@ -49,7 +50,7 @@ class Particle {
             this.prevY = this.y;
         }
 
-        // Stay within vertical bounds
+        // Keep inside vertical bounds
         if(this.y < 0) this.y = 0;
         if(this.y > canvas.height) this.y = canvas.height;
     }
@@ -64,16 +65,16 @@ class Particle {
 }
 
 // ----------------------------
-// INITIALIZE PARTICLES
+// PARTICLE LINES
 let particles = [];
 
 function resetParticles() {
     particles = [];
     const spacingY = canvas.height / (NUM_LINES + 1);
     const spacingX = canvas.width / PARTICLES_PER_LINE;
-    for(let line = 0; line < NUM_LINES; line++) {
+    for (let line = 0; line < NUM_LINES; line++) {
         const y = spacingY * (line + 1);
-        for(let p = 0; p < PARTICLES_PER_LINE; p++) {
+        for (let p = 0; p < PARTICLES_PER_LINE; p++) {
             particles.push(new Particle(p * spacingX, y));
         }
     }
@@ -82,16 +83,23 @@ function resetParticles() {
 resetParticles();
 
 // ----------------------------
+// MOUSE POSITION
+let mouseX = canvas.width / 2;
+let mouseY = canvas.height / 2;
+
+canvas.addEventListener("mousemove", e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+// ----------------------------
 // ANIMATION LOOP
 function animate() {
     ctx.fillStyle = "rgba(0,0,0,0.2)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const vortexX = canvas.width / 2;
-    const vortexY = canvas.height / 2;
-
     particles.forEach(p => {
-        p.update(vortexX, vortexY);
+        p.update(mouseX, mouseY);
         p.draw();
     });
 
@@ -103,7 +111,7 @@ animate();
 // ----------------------------
 // CONTROLS
 window.addEventListener("keydown", e => {
-    switch(e.key){
+    switch(e.key) {
         case "v": showVortex = !showVortex; break;
         case "ArrowUp": PARTICLES_PER_LINE += 10; resetParticles(); break;
         case "ArrowDown": PARTICLES_PER_LINE = Math.max(10, PARTICLES_PER_LINE - 10); resetParticles(); break;
